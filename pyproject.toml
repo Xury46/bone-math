@@ -1,0 +1,7 @@
+[project]
+name = "bone-math"
+version = "0.1.0"
+description = "Blender add-on with operators and math functions for working with bones and rigs."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
