@@ -5,3 +5,8 @@ description = "Blender add-on with operators and math functions for working with
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
+
+[dependency-groups]
+dev = [
+    "fake-bpy-module>=20251003",
+]
