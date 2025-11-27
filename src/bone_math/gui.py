@@ -7,7 +7,9 @@ from typing import cast
 import bpy
 from bpy.types import (
     Context,
+    FloatProperty,
     KinematicConstraint,
+    Object,
     UILayout,
 )
 
@@ -24,12 +26,23 @@ def calculate_pole_angle_context_menu(self, context: Context) -> None:
 
     try:
         ik_constraint: KinematicConstraint | None = getattr(context, "constraint")
-        if isinstance(ik_constraint, KinematicConstraint):
-            cast(UILayout, self.layout).operator(
-                operator=OT_BoneMath_CalculatePoleAngle.bl_idname,
-                icon=OT_BoneMath_CalculatePoleAngle.bl_icon,
-                text=OT_BoneMath_CalculatePoleAngle.bl_label,
-            )
+        if not isinstance(ik_constraint, KinematicConstraint):
+            return
+
+        if context.property is None:
+            return
+
+        data_path: str
+        _, data_path, _ = context.property
+        property_name: str = data_path.rsplit(".", 1)[-1]
+        if property_name != "pole_angle":
+            return
+
+        cast(UILayout, self.layout).operator(
+            operator=OT_BoneMath_CalculatePoleAngle.bl_idname,
+            icon=OT_BoneMath_CalculatePoleAngle.bl_icon,
+            text=OT_BoneMath_CalculatePoleAngle.bl_label,
+        )
     except AttributeError:
         pass
 
