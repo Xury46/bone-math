@@ -6,6 +6,8 @@ by Jaroslav Jerryno Novotny
 __author__ = "Xury Greer"
 
 # Third Party
+from math import atan2
+
 from bpy.types import (
     PoseBone,
 )
@@ -23,14 +25,42 @@ def signed_angle(
 
     :param vector_a: The first vector.
     :param vector_b: The second vector.
-    :param normal: Sign will be determined by this orientation.
-    :return: The signed angle between the two vectors around the given normal axis.
+    :param normal: A reference normal vector, the sign will be determined by this orientation.
+        This vector does not need to be normalized.
+    :return: The signed angle between the two vectors around the given reference normal.
     """
 
-    angle: float = vector_a.angle(vector_b)
-    if vector_a.cross(vector_b).angle(normal) < 1.0:
-        angle = -angle
-    return angle
+    # Ensure all arguments have a magnitude greater than 0.
+    if any(vector.magnitude == 0.0 for vector in (vector_a, vector_b, normal)):
+        raise ValueError(
+            "Can't calculate signed angle, one or more of the given inputs has zero magnitude:\n"
+            f"vector_a: '{vector_a}'\n"
+            f"vector_b: '{vector_b}'\n"
+            f"normal:   '{normal}'\n"
+        )
+
+    # Normalize the vectors to get pure direction with a magnitude of 1.0.
+    direction_a: Vector = vector_a.normalized()
+    direction_b: Vector = vector_b.normalized()
+
+    # Since the vectors are normalized, the dot product will give us
+    # the cosine of the unsigned angle between the vectors.
+    a_dot_b: float = direction_a.dot(direction_b)
+
+    # The unsigned angle from 0.0 to pi can be calculated with arccosine: `acos(a_dot_b)`.
+    # However, we need more information to get the signed angle from -pi to pi.
+
+    # direction_c is the cross product of direction_b and direction_a, so it is perpendicular to both.
+    # Its dot product with the reference normal tells us the orientation of the rotation from a to b relative to the normal's direction.
+    direction_c: Vector = direction_b.cross(direction_a)
+    normal_dot_c: float = normal.dot(direction_c)
+
+    # `atan2(sin, cos)` gives us the signed angle from -pi to pi.
+    # normal_dot_c represents the sine component.
+    # a_dot_b represents the cosine component.
+    signed_angle_radians: float = atan2(normal_dot_c, a_dot_b)
+
+    return signed_angle_radians
 
 
 def get_pole_angle(
@@ -62,10 +92,14 @@ def get_pole_angle(
 
     projected_pole_axis: Vector = pole_normal.cross(start_bone.y_axis)
 
-    pole_angle: float = signed_angle(
-        start_bone.x_axis,
-        projected_pole_axis,
-        start_bone.y_axis,
-    )
+    try:
+        pole_angle: float = signed_angle(
+            start_bone.x_axis,
+            projected_pole_axis,
+            start_bone.y_axis,
+        )
 
-    return pole_angle
+        return pole_angle
+    except ValueError as e:
+        print(e)
+        return 0.0
