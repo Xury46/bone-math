@@ -8,6 +8,7 @@ _needs_reload: bool = "bpy" in locals()
 import bpy  # noqa: F401
 
 from . import (
+    gui,
     operators,
     pole_angle,
 )
@@ -15,13 +16,16 @@ from . import (
 if _needs_reload:
     import importlib
 
+    importlib.reload(gui)
     importlib.reload(operators)
     importlib.reload(pole_angle)
 
 
 def register() -> None:
     operators.register()
+    gui.register()
 
 
 def unregister() -> None:
     operators.unregister()
+    gui.unregister()
